@@ -32,6 +32,6 @@ jobs:
           EB_APP_NAME: ${{ secrets.EB_APP_NAME }}
         run: |
           pip install awsebcli
-          eb init $EB_APP_NAME --region $AWS_REGION
+          eb init $EB_APP_NAME --region $AWS_REGION --platform "python-3.9" --no-input
           eb use $EB_ENV_NAME
-          eb deploy
+          eb deploy --staged --verbose
