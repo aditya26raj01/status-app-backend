@@ -22,11 +22,13 @@ class IncidentSeverity(str, Enum):
 
 class IncidentUpdate(DocumentModel):
     message: str
+    created_by_username: Optional[str] = None
     created_by: Optional[PyObjectId] = None
 
 
 class AffectedService(DocumentModel):
     service_id: PyObjectId
+    service_name: str
     status: ServiceStatus = ServiceStatus.UNKNOWN
     created_by: Optional[PyObjectId] = None
 
@@ -42,6 +44,7 @@ class Incident(DocumentModel):
     started_at: datetime = Field(default_factory=datetime.utcnow)
     resolved_at: Optional[datetime] = None
     updates: Optional[List[IncidentUpdate]] = []
+    created_by_username: str
 
     @classmethod
     def collection(cls):

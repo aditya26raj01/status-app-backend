@@ -12,6 +12,7 @@ from app.models.service_model import ServiceStatus
 
 class AffectedServiceUpdate(BaseModel):
     service_id: str
+    service_name: str
     status: ServiceStatus
     created_at: datetime
 
@@ -20,6 +21,7 @@ class IncidentUpdateCreate(BaseModel):
     message: str
     created_by: str
     created_at: datetime
+    created_by_username: str
 
 
 class IncidentCreate(BaseModel):

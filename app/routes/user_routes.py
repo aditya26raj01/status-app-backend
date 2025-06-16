@@ -1,10 +1,13 @@
 from fastapi import APIRouter, HTTPException
 from app.models.org_model import Organization
-from app.models.user_model import User
+from app.models.user_model import User, OrgMembership, UserRole
 from app.schemas.user_schema import UserCreate
 from app.dependencies.auth import get_current_user
 from fastapi import Depends
 from app.core.logger import logger
+from typing import List
+from bson import ObjectId
+from app.models.base import PyObjectId
 
 router = APIRouter(prefix="/user", tags=["Users"])
 
@@ -58,3 +61,55 @@ async def fetch_user(user_id: str):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.get("/org/{org_id}/users", response_model=List[User])
+async def fetch_org_users(org_id: str, current_user: User = Depends(get_current_user)):
+    org = await Organization.find_by_id(org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    users = await User.find_all(
+        {"org_memberships.org_id": PyObjectId(org_id), "_id": {"$ne": current_user.id}}
+    )
+    return users
+
+
+@router.post("/create-user-in-org", response_model=User)
+async def create_user_in_org(
+    user_data: UserCreate, org_id: str, current_user: User = Depends(get_current_user)
+):
+    # Check if the current user has admin access in the organization
+    user_org_membership = next(
+        (
+            membership
+            for membership in current_user.org_memberships
+            if str(membership.org_id) == org_id and membership.role == UserRole.ADMIN
+        ),
+        None,
+    )
+    if not user_org_membership:
+        raise HTTPException(
+            status_code=403,
+            detail="User does not have admin access in this organization",
+        )
+
+    # Find the org_slug from the current user's org_membership
+    org_slug = user_org_membership.org_slug
+
+    # Create the new user
+    existing_user = await User.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    new_user = User(
+        email=user_data.email,
+        full_name=user_data.full_name,
+        photo_url=user_data.photo_url,
+        org_memberships=[
+            OrgMembership(
+                org_id=PyObjectId(org_id), org_slug=org_slug, role=UserRole.MEMBER
+            )
+        ],
+    )
+    await new_user.save()
+    return new_user

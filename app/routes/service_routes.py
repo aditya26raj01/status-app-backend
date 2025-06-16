@@ -24,6 +24,7 @@ async def create_service(
         org_id=PyObjectId(service_data.org_id),
         created_by=user.id,  # type: ignore
         # because if code reaches here, user is not None
+        created_by_username=user.full_name,
     )
     # Save the service and get the inserted ID
     result = await service.save()

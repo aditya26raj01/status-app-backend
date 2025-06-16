@@ -7,7 +7,7 @@ class Organization(DocumentModel):
     name: str
     domain: str
     org_slug: str
-    is_admin_org: bool = False
+    created_by_username: str
 
     @classmethod
     def collection(cls):

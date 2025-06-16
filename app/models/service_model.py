@@ -18,6 +18,7 @@ class Service(DocumentModel):
     description: Optional[str] = None
     status: ServiceStatus = ServiceStatus.UNKNOWN
     org_id: PyObjectId
+    created_by_username: str
 
     @classmethod
     def collection(cls):

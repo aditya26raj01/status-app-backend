@@ -28,6 +28,7 @@ async def create_incident(
                 AffectedService(
                     service_id=affected_service.service_id,
                     status=affected_service.status,
+                    service_name=affected_service.service_name,
                 )
                 for affected_service in incident_data.affected_services
             ]
@@ -37,6 +38,7 @@ async def create_incident(
         org_id=PyObjectId(incident_data.org_id),
         created_by=user.id,  # type: ignore
         # because if code reaches here, user is not None
+        created_by_username=user.full_name,
         started_at=incident_data.started_at,
         resolved_at=incident_data.resolved_at,
         updates=(
@@ -44,6 +46,7 @@ async def create_incident(
                 IncidentUpdate(
                     message=update.message,
                     created_by=user.id,
+                    created_by_username=user.full_name,
                 )
                 for update in incident_data.updates
             ]
@@ -74,7 +77,7 @@ async def create_incident(
         entity_type=EntityType.INCIDENT,
         change_type=ChangeType.CREATE,
         changes={
-            "title": incident.title,
+            "name": incident.title,
             "description": incident.description,
             "status": incident.status,
             "severity": incident.severity,
@@ -116,6 +119,7 @@ async def update_incident(
                 service_id=PyObjectId(affected_service.service_id),
                 status=affected_service.status,
                 created_at=affected_service.created_at,
+                service_name=affected_service.service_name,
             )
             for affected_service in incident_data.affected_services
         ]
@@ -129,6 +133,11 @@ async def update_incident(
                 message=update.message,
                 created_by=(
                     PyObjectId(update.created_by) if update.created_by else user.id
+                ),
+                created_by_username=(
+                    update.created_by_username
+                    if update.created_by_username
+                    else user.full_name
                 ),
                 created_at=update.created_at,
             )
@@ -169,7 +178,7 @@ async def update_incident(
         entity_type=EntityType.INCIDENT,
         change_type=ChangeType.UPDATE,
         changes={
-            "title": incident.title,
+            "name": incident.title,
             "description": incident.description,
             "status": incident.status,
             "severity": incident.severity,

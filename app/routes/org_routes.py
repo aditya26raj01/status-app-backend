@@ -33,6 +33,7 @@ async def create_org(
         org_slug=org_data.org_slug,
         created_by=user.id,  # type: ignore
         # because if code reaches here, user is not None
+        created_by_username=user.full_name,
     )
     org = await org.save()
     if org.id:

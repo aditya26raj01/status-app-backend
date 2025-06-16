@@ -64,7 +64,7 @@ class DocumentModel(BaseModel):
     async def find_all(
         cls: Type[ModelType], filter: Dict[str, Any] = {}, limit: int = 100
     ) -> List[ModelType]:
-        cursor = cls.collection().find(filter).limit(limit)
+        cursor = cls.collection().find(filter).sort("created_at", -1).limit(limit)
         return [cls(**doc) async for doc in cursor]
 
     # UPDATE (partial)
