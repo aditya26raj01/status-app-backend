@@ -8,6 +8,7 @@ from app.core.logger import logger
 from typing import List
 from bson import ObjectId
 from app.models.base import PyObjectId
+from firebase_admin import auth
 
 router = APIRouter(prefix="/user", tags=["Users"])
 
@@ -96,7 +97,20 @@ async def create_user_in_org(
     # Find the org_slug from the current user's org_membership
     org_slug = user_org_membership.org_slug
 
-    # Create the new user
+    # Create the new user in Firebase
+    try:
+        firebase_user = auth.create_user(
+            email=user_data.email,
+            password=user_data.password if user_data.password else None,
+            display_name=user_data.full_name,
+            photo_url=user_data.photo_url,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create user in Firebase: {str(e)}"
+        )
+
+    # Create the new user in the local database
     existing_user = await User.find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")

@@ -6,3 +6,4 @@ class UserCreate(BaseModel):
     email: str
     full_name: str
     photo_url: Optional[str] = None
+    password: Optional[str] = None
