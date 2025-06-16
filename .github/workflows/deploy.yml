@@ -23,12 +23,6 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - name: Install AWS CLI
-        run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
-
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -40,15 +34,19 @@ jobs:
         run: |
           zip -r app.zip . -x "*.git*" "*.github*" "tests/*" "README.md"
 
-      - name: Deploy to Elastic Beanstalk
+      - name: Upload zip to S3
+        run: |
+          aws s3 cp app.zip s3://${{ secrets.EB_S3_BUCKET }}/app-${{ github.run_number }}.zip
+
+      - name: Create new Elastic Beanstalk application version
         run: |
           aws elasticbeanstalk create-application-version \
             --application-name ${{ secrets.EB_APP_NAME }} \
             --version-label "v-${{ github.run_number }}" \
             --source-bundle S3Bucket=${{ secrets.EB_S3_BUCKET }},S3Key=app-${{ github.run_number }}.zip
 
-          aws s3 cp app.zip s3://${{ secrets.EB_S3_BUCKET }}/app-${{ github.run_number }}.zip
-
+      - name: Deploy new version to Elastic Beanstalk
+        run: |
           aws elasticbeanstalk update-environment \
             --environment-name ${{ secrets.EB_ENV_NAME }} \
             --version-label "v-${{ github.run_number }}"
