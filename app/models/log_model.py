@@ -5,6 +5,7 @@ from datetime import datetime
 from enum import Enum
 
 
+# Define possible entity types for log entries
 class EntityType(str, Enum):
     SERVICE = "Service"
     ORGANIZATION = "Organization"
@@ -12,6 +13,7 @@ class EntityType(str, Enum):
     # Add other entity types as needed
 
 
+# Define possible change types for log entries
 class ChangeType(str, Enum):
     CREATE = "create"
     UPDATE = "update"
@@ -19,14 +21,15 @@ class ChangeType(str, Enum):
     # Add other change types as needed
 
 
-# ========== LogEntry ==========
+# Model for a log entry
 class LogEntry(DocumentModel):
-    entity_id: PyObjectId
-    entity_type: EntityType
-    change_type: ChangeType
-    changes: Dict[str, Optional[str]]
-    org_id: PyObjectId  # Add org_id as a mandatory field
+    entity_id: PyObjectId  # ID of the entity being logged
+    entity_type: EntityType  # Type of the entity
+    change_type: ChangeType  # Type of change made
+    changes: Dict[str, Optional[str]]  # Details of the changes made
+    org_id: PyObjectId  # ID of the organization
 
+    # Define the MongoDB collection for log entries
     @classmethod
     def collection(cls):
         return db["log_entries"]

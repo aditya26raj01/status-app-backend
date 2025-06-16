@@ -10,9 +10,22 @@ from bson import ObjectId
 from app.models.base import PyObjectId
 from firebase_admin import auth
 
+# Import necessary modules and dependencies
+# FastAPI components for routing and exceptions
+# Custom models and schemas for users and organizations
+# Authentication dependency
+# Logger for logging
+# Typing for type hints
+# ObjectId for MongoDB
+
+
+# Create a router for user-related endpoints with a prefix and tags
 router = APIRouter(prefix="/user", tags=["Users"])
 
 
+# Endpoint to sync a user to the database
+# Accepts user data as input
+# Returns the existing or newly created user
 @router.post("/sync-user-to-db", response_model=User)
 async def sync_user_to_db(user_data: UserCreate):
     existing_user = await User.find_one({"email": user_data.email})
@@ -30,6 +43,9 @@ async def sync_user_to_db(user_data: UserCreate):
     return user
 
 
+# Endpoint to update the current organization for a user
+# Accepts organization ID and the current user as input
+# Returns the updated user
 @router.post("/update-current-org", response_model=User)
 async def update_current_org(org_id: str, user: User = Depends(get_current_user)):
     org = await Organization.find_by_id(org_id)
@@ -56,6 +72,9 @@ async def update_current_org(org_id: str, user: User = Depends(get_current_user)
     return user
 
 
+# Endpoint to fetch a specific user by their ID
+# Accepts user ID as input
+# Returns the user if found
 @router.get("/{user_id}", response_model=User)
 async def fetch_user(user_id: str):
     user = await User.find_by_id(user_id)
@@ -64,6 +83,9 @@ async def fetch_user(user_id: str):
     return user
 
 
+# Endpoint to fetch all users in an organization
+# Accepts organization ID and the current user as input
+# Returns a list of users
 @router.get("/org/{org_id}/users", response_model=List[User])
 async def fetch_org_users(org_id: str, current_user: User = Depends(get_current_user)):
     org = await Organization.find_by_id(org_id)
@@ -75,6 +97,9 @@ async def fetch_org_users(org_id: str, current_user: User = Depends(get_current_
     return users
 
 
+# Endpoint to create a user in an organization
+# Accepts user data, organization ID, and the current user as input
+# Returns the newly created user
 @router.post("/create-user-in-org", response_model=User)
 async def create_user_in_org(
     user_data: UserCreate, org_id: str, current_user: User = Depends(get_current_user)

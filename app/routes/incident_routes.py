@@ -1,3 +1,9 @@
+# Import necessary modules and dependencies
+# FastAPI components for routing and exceptions
+# Custom models and schemas for incidents, services, and users
+# Authentication dependency
+# Typing for type hints
+# Websocket manager for broadcasting messages
 from fastapi import APIRouter, HTTPException
 from app.models.base import PyObjectId
 from app.models.incident_model import AffectedService, Incident, IncidentUpdate
@@ -11,13 +17,24 @@ from app.models.log_model import LogEntry, EntityType, ChangeType
 from app.websocket_manager import broadcast_message
 
 
+# Create a router for incident-related endpoints with a prefix and tags
 router = APIRouter(prefix="/incident", tags=["Incidents"])
 
 
+# Endpoint to create a new incident
+# Accepts incident data and the current user as input
+# Returns the created incident
 @router.post("/create-incident", response_model=Incident)
 async def create_incident(
     incident_data: IncidentCreate, user: User = Depends(get_current_user)
 ):
+    # Create a new incident object from the provided data
+    # Set the title, description, status, severity, and affected services
+    # Convert affected services from input data to AffectedService objects
+    # Set the organization ID and creator information
+    # Set the start and resolution times
+    # Convert updates from input data to IncidentUpdate objects
+    # Save the incident to the database
     incident = Incident(
         title=incident_data.title,
         description=incident_data.description,
@@ -56,22 +73,27 @@ async def create_incident(
     )
     incident = await incident.save()
 
-    # update affected services
+    # Update the status of affected services in the database
     for affected_service in incident.affected_services:
         await Service.collection().update_one(
             {"_id": affected_service.service_id},
             {"$set": {"status": affected_service.status}},
         )
 
+    # Check if the incident ID is set after saving
+    # Raise an HTTPException if not
     if incident.id is None:
         raise HTTPException(
             status_code=500, detail="Incident ID is not set after saving."
         )
 
+    # Check if the user ID is available
+    # Raise an HTTPException if not
     if user.id is None:
         raise HTTPException(status_code=500, detail="User ID is not available.")
 
     # Log the creation of the incident
+    # Save the log entry to the database
     log_entry = LogEntry(
         entity_id=incident.id,
         entity_type=EntityType.INCIDENT,
@@ -87,16 +109,21 @@ async def create_incident(
     )
     await log_entry.save()
 
+    # Broadcast the creation of the incident to connected clients
     await broadcast_message(
         {"type": "incident", "data": incident.model_dump_json(), "action": "create"}
     )
     return incident
 
 
+# Endpoint to update an existing incident
+# Accepts updated incident data and the current user as input
+# Returns the updated incident
 @router.post("/update-incident", response_model=Incident)
 async def update_incident(
     incident_data: UpdateIncident, user: User = Depends(get_current_user)
 ):
+    # Find the incident by its ID
     incident = await Incident.find_by_id(incident_data.incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -109,6 +136,8 @@ async def update_incident(
             status_code=403, detail="You are not authorized to update this incident"
         )
 
+    # Update the incident's title, description, status, severity, and affected services
+    # Convert affected services from input data to AffectedService objects
     incident.title = incident_data.title
     incident.description = incident_data.description
     incident.status = incident_data.status
@@ -147,6 +176,7 @@ async def update_incident(
         else []
     )
 
+    # Update the incident in the database
     await incident.update(
         {
             "title": incident.title,
@@ -161,6 +191,7 @@ async def update_incident(
         }
     )
 
+    # Re-fetch the incident to ensure it was updated
     incident = await Incident.find_by_id(incident_data.incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -169,10 +200,13 @@ async def update_incident(
             status_code=500, detail="Incident ID is not set after update."
         )
 
+    # Check if the user ID is available
+    # Raise an HTTPException if not
     if user.id is None:
         raise HTTPException(status_code=500, detail="User ID is not available.")
 
     # Log the update of the incident
+    # Save the log entry to the database
     log_entry = LogEntry(
         entity_id=incident.id,
         entity_type=EntityType.INCIDENT,
@@ -188,12 +222,14 @@ async def update_incident(
     )
     await log_entry.save()
 
+    # Update the status of affected services in the database
     for affected_service in incident.affected_services:
         await Service.collection().update_one(
             {"_id": affected_service.service_id},
             {"$set": {"status": affected_service.status.value}},
         )
 
+    # Broadcast the update of the incident to connected clients
     await broadcast_message(
         {
             "type": "incident",
@@ -204,8 +240,12 @@ async def update_incident(
     return incident
 
 
+# Endpoint to list all incidents for a given organization
+# Accepts organization ID and the current user as input
+# Returns a list of incidents
 @router.get("/get-all-incidents", response_model=List[Incident])
 async def list_incidents(org_id: str, user: User = Depends(get_current_user)):
+    # Find all incidents for the given organization ID
     incidents = await Incident.find_all(
         {
             "org_id": PyObjectId(org_id),
@@ -214,8 +254,12 @@ async def list_incidents(org_id: str, user: User = Depends(get_current_user)):
     return incidents
 
 
+# Endpoint to delete an incident
+# Accepts incident ID and the current user as input
+# Returns the deleted incident
 @router.delete("/delete-incident", response_model=Incident)
 async def delete_incident(incident_id: str, user: User = Depends(get_current_user)):
+    # Find the incident by its ID
     incident = await Incident.find_by_id(incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
@@ -229,15 +273,20 @@ async def delete_incident(incident_id: str, user: User = Depends(get_current_use
         )
     await incident.delete()
 
+    # Check if the incident ID is set after deletion
+    # Raise an HTTPException if not
     if incident.id is None:
         raise HTTPException(
             status_code=500, detail="Incident ID is not set after deletion."
         )
 
+    # Check if the user ID is available
+    # Raise an HTTPException if not
     if user.id is None:
         raise HTTPException(status_code=500, detail="User ID is not available.")
 
     # Log the deletion of the incident
+    # Save the log entry to the database
     log_entry = LogEntry(
         entity_id=incident.id,
         entity_type=EntityType.INCIDENT,
@@ -248,14 +297,19 @@ async def delete_incident(incident_id: str, user: User = Depends(get_current_use
     )
     await log_entry.save()
 
+    # Broadcast the deletion of the incident to connected clients
     await broadcast_message(
         {"type": "incident", "data": incident.model_dump_json(), "action": "delete"}
     )
     return incident
 
 
+# Endpoint to fetch a specific incident by its ID
+# Accepts incident ID as input
+# Returns the incident if found
 @router.get("/{incident_id}", response_model=Incident)
 async def fetch_incident(incident_id: str):
+    # Find the incident by its ID
     incident = await Incident.find_by_id(incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")

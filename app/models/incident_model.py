@@ -7,6 +7,7 @@ from enum import Enum
 from app.models.service_model import ServiceStatus
 
 
+# Define possible statuses for an incident
 class IncidentStatus(str, Enum):
     INVESTIGATING = "investigating"
     IDENTIFIED = "identified"
@@ -14,38 +15,42 @@ class IncidentStatus(str, Enum):
     RESOLVED = "resolved"
 
 
+# Define possible severity levels for an incident
 class IncidentSeverity(str, Enum):
     MINOR = "minor"
     MAJOR = "major"
     CRITICAL = "critical"
 
 
+# Model for updates related to an incident
 class IncidentUpdate(DocumentModel):
-    message: str
-    created_by_username: Optional[str] = None
-    created_by: Optional[PyObjectId] = None
+    message: str  # Update message
+    created_by_username: Optional[str] = None  # Username of the creator
+    created_by: Optional[PyObjectId] = None  # ID of the creator
 
 
+# Model for services affected by an incident
 class AffectedService(DocumentModel):
-    service_id: PyObjectId
-    service_name: str
-    status: ServiceStatus = ServiceStatus.UNKNOWN
-    created_by: Optional[PyObjectId] = None
+    service_id: PyObjectId  # ID of the affected service
+    service_name: str  # Name of the affected service
+    status: ServiceStatus = ServiceStatus.UNKNOWN  # Status of the service
+    created_by: Optional[PyObjectId] = None  # ID of the creator
 
 
-# ========== Incident ==========
+# Model for an incident
 class Incident(DocumentModel):
-    title: str
-    description: str
-    status: IncidentStatus
-    severity: Optional[IncidentSeverity] = None
-    affected_services: List[AffectedService] = []
-    org_id: PyObjectId
-    started_at: datetime = Field(default_factory=datetime.utcnow)
-    resolved_at: Optional[datetime] = None
-    updates: Optional[List[IncidentUpdate]] = []
-    created_by_username: str
+    title: str  # Title of the incident
+    description: str  # Description of the incident
+    status: IncidentStatus  # Current status of the incident
+    severity: Optional[IncidentSeverity] = None  # Severity level of the incident
+    affected_services: List[AffectedService] = []  # List of affected services
+    org_id: PyObjectId  # ID of the organization
+    started_at: datetime = Field(default_factory=datetime.utcnow)  # Start time
+    resolved_at: Optional[datetime] = None  # Resolution time
+    updates: Optional[List[IncidentUpdate]] = []  # List of updates
+    created_by_username: str  # Username of the creator
 
+    # Define the MongoDB collection for incidents
     @classmethod
     def collection(cls):
         return db["incidents"]
