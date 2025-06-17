@@ -9,11 +9,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-firebase_json = os.getenv("FIREBASE_ADMIN_CREDENTIALS")
+# firebase_json = os.getenv("FIREBASE_ADMIN_CREDENTIALS")
 
 # Check if any Firebase app instances are already initialized
-if not firebase_admin._apps:
-    # Load Firebase credentials from environment variable
-    cred = credentials.Certificate(json.loads(firebase_json))  # type: ignore
-    # Initialize the Firebase app with the loaded credentials
-    firebase_admin.initialize_app(cred)
+# if not firebase_admin._apps:
+# Load Firebase credentials from environment variable
+# cred = credentials.Certificate(json.loads(firebase_json))  # type: ignore
+# Initialize the Firebase app with the loaded credentials
+# firebase_admin.initialize_app(cred)
